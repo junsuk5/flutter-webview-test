@@ -37,13 +37,29 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final Completer<WebViewController> _controller = Completer<WebViewController>();
+  final Completer<WebViewController> _controller =
+      Completer<WebViewController>();
+
+  var index = 0;
+
+  final videos = [
+    "https://player.vimeo.com/external/530794320.hd.mp4?s=068c0f28633bbd8531fae2c03b12258c63c14d67%26profile_id=175",
+    "https://player.vimeo.com/external/530793823.hd.mp4?s=942cfe1a1b8c5608ea367479b3bf464e5d896891%26profile_id=175&download=1",
+    "https://player.vimeo.com/external/530793693.hd.mp4?s=fcecda4ed8bdccbe930f112e34c60031a5304dac%26profile_id=175&download=1",
+    "https://player.vimeo.com/external/530793518.hd.mp4?s=aa253a6a492bb6ddc7fbe4ed314945214513e7bc%26profile_id=175&download=1"
+  ];
+
+  String _url = '';
+
+  WebViewController _webViewController;
 
   @override
   void initState() {
     super.initState();
     // Enable hybrid composition.
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
+
+    _url = 'https://junsuk5.github.io/web-test/index.html?url=${videos[0]}';
   }
 
   @override
@@ -52,15 +68,26 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(''),
       ),
-      body: WebView(
-        initialUrl: 'https://junsuk5.github.io/web-test/index.html',
-        javascriptMode: JavascriptMode.unrestricted,
-        onWebViewCreated: (WebViewController webViewController) {
-          _controller.complete(webViewController);
-        },
-        javascriptChannels: <JavascriptChannel>{
-          _toasterJavascriptChannel(context),
-        },
+      body: Column(
+        children: [
+          SizedBox(
+            height: 300,
+            child: WebView(
+              initialUrl:
+                  _url,
+              javascriptMode: JavascriptMode.unrestricted,
+              onWebViewCreated: (WebViewController webViewController) {
+                _webViewController = webViewController;
+                _controller.complete(webViewController);
+              },
+              javascriptChannels: <JavascriptChannel>{
+                _toasterJavascriptChannel(context),
+              },
+            ),
+          ),
+          ElevatedButton(onPressed: prevVideo, child: Text('prev')),
+          ElevatedButton(onPressed: nextVideo, child: Text('next')),
+        ],
       ),
     );
   }
@@ -69,8 +96,37 @@ class _MyHomePageState extends State<MyHomePage> {
     return JavascriptChannel(
         name: 'messageHandler',
         onMessageReceived: (JavascriptMessage message) {
+          if (message.message == 'next') {
+            nextVideo();
+          } else if (message.message == 'prev') {
+            prevVideo();
+          }
           // ignore: deprecated_member_use
           print(message.message);
         });
+  }
+
+  void nextVideo() {
+    setState(() {
+      if (index < videos.length - 1) {
+        index++;
+      } else {
+        index = 0;
+      }
+      _url = 'https://junsuk5.github.io/web-test/index.html?url=${videos[index]}';
+      _webViewController.loadUrl(_url);
+    });
+  }
+
+  void prevVideo() {
+    setState(() {
+      if (index > 0) {
+        index--;
+      } else {
+        index = 0;
+      }
+      _url = 'https://junsuk5.github.io/web-test/index.html?url=${videos[index]}';
+      _webViewController.loadUrl(_url);
+    });
   }
 }
